@@ -178,6 +178,20 @@ export default function DocumentView() {
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              toast({
+                title: "Changes saved",
+                description: "All IDs are automatically saved as you type.",
+                duration: 2000,
+              });
+            }} 
+            className="flex-1 md:flex-none border-primary/20 hover:bg-primary/5"
+          >
+            <CheckCircle2 className="mr-2 h-4 w-4 text-primary" />
+            Save List
+          </Button>
           <Button variant="outline" onClick={handleShare} className="flex-1 md:flex-none">
             <Share2 className="mr-2 h-4 w-4" />
             Share
