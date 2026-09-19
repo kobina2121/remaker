@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { spawn } from "child_process";
 
 const app = express();
 const httpServer = createServer(app);
@@ -12,8 +13,11 @@ declare module "http" {
   }
 }
 
+// A full range save (up to MAX_RANGE_SIZE rows) is a few megabytes of JSON,
+// well past Express's 100kb default.
 app.use(
   express.json({
+    limit: "25mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
@@ -31,6 +35,21 @@ export function log(message: string, source = "express") {
   });
 
   console.log(`${formattedTime} [${source}] ${message}`);
+}
+
+// Opens the app in the default browser once the server is actually listening.
+// Skipped in production, inside Electron, on Replit, and when OPEN_BROWSER=false.
+function openBrowser(url: string) {
+  const [command, args]: [string, string[]] =
+    process.platform === "darwin"
+      ? ["open", [url]]
+      : process.platform === "win32"
+        ? ["cmd", ["/c", "start", "", url]]
+        : ["xdg-open", [url]];
+
+  const child = spawn(command, args, { stdio: "ignore", detached: true });
+  child.on("error", () => log(`could not open a browser automatically - visit ${url}`));
+  child.unref();
 }
 
 app.use((req, res, next) => {
@@ -85,19 +104,30 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
+  // ALWAYS serve the app on the port specified in the environment variable PORT.
+  // On Replit that is set to 5000 in .replit, and other ports are firewalled.
+  // The local fallback is 3000 because macOS AirPlay Receiver permanently
+  // occupies port 5000, which makes `npm run dev` fail with EADDRINUSE.
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = parseInt(process.env.PORT || "3000", 10);
+  const host = process.env.HOST || "0.0.0.0";
   httpServer.listen(
     {
       port,
-      host: "0.0.0.0",
-      reusePort: true,
+      host,
     },
     () => {
-      log(`serving on port ${port}`);
+      log(`serving on ${host}:${port}`);
+
+      const url = `http://localhost:${port}`;
+      const shouldOpen =
+        process.env.NODE_ENV === "development" &&
+        process.env.OPEN_BROWSER !== "false" &&
+        process.env.REPL_ID === undefined;
+
+      if (shouldOpen) {
+        openBrowser(url);
+      }
     },
   );
 })();

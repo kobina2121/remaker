@@ -1,17 +1,27 @@
-
 import { z } from 'zod';
-import { insertDocumentSchema, insertNumberSchema, documents, numbers } from './schema';
+import {
+  bulkDeleteSchema,
+  documentSchema,
+  documentSummarySchema,
+  documentWithRecordsSchema,
+  insertDocumentSchema,
+  saveRecordsSchema,
+  updateDocumentSchema,
+} from './schema';
 
 export const errorSchemas = {
   validation: z.object({
     message: z.string(),
     field: z.string().optional(),
+    /** Row numbers (1-based) that failed validation, for highlighting in the editor. */
+    rows: z.array(z.number().int()).optional(),
   }),
   notFound: z.object({
     message: z.string(),
   }),
   conflict: z.object({
     message: z.string(),
+    rows: z.array(z.number().int()).optional(),
   }),
   internal: z.object({
     message: z.string(),
@@ -20,12 +30,19 @@ export const errorSchemas = {
 
 export const api = {
   documents: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/documents',
+      responses: {
+        200: z.array(documentSummarySchema),
+      },
+    },
     create: {
       method: 'POST' as const,
       path: '/api/documents',
       input: insertDocumentSchema.optional(),
       responses: {
-        201: z.custom<typeof documents.$inferSelect>(),
+        201: documentSchema,
         400: errorSchemas.validation,
       },
     },
@@ -33,38 +50,50 @@ export const api = {
       method: 'GET' as const,
       path: '/api/documents/:id',
       responses: {
-        200: z.custom<typeof documents.$inferSelect & { numbers: typeof numbers.$inferSelect[] }>(),
+        200: documentWithRecordsSchema,
         404: errorSchemas.notFound,
       },
     },
     update: {
       method: 'PATCH' as const,
       path: '/api/documents/:id',
-      input: insertDocumentSchema.partial(),
+      input: updateDocumentSchema,
       responses: {
-        200: z.custom<typeof documents.$inferSelect>(),
+        200: documentSchema,
+        400: errorSchemas.validation,
         404: errorSchemas.notFound,
+      },
+    },
+    remove: {
+      method: 'DELETE' as const,
+      path: '/api/documents/:id',
+      responses: {
+        204: z.null(),
+        404: errorSchemas.notFound,
+      },
+    },
+    bulkRemove: {
+      method: 'POST' as const,
+      path: '/api/documents/bulk-delete',
+      input: bulkDeleteSchema,
+      responses: {
+        200: z.object({ deleted: z.number().int() }),
+        400: errorSchemas.validation,
       },
     },
   },
-  numbers: {
-    create: {
-      method: 'POST' as const,
-      path: '/api/documents/:id/numbers',
-      input: insertNumberSchema,
+  records: {
+    /** Save All - replaces every row in the list. */
+    save: {
+      method: 'PUT' as const,
+      path: '/api/documents/:id/records',
+      input: saveRecordsSchema,
       responses: {
-        201: z.custom<typeof numbers.$inferSelect>(),
+        // Only a count: echoing every row back made a 50,000-row save take seconds.
+        200: z.object({ count: z.number().int().nonnegative(), savedAt: z.coerce.date() }),
         400: errorSchemas.validation,
         404: errorSchemas.notFound,
-        409: errorSchemas.conflict, // Duplicate number
-      },
-    },
-    list: {
-      method: 'GET' as const,
-      path: '/api/documents/:id/numbers',
-      responses: {
-        200: z.array(z.custom<typeof numbers.$inferSelect>()),
-        404: errorSchemas.notFound,
+        409: errorSchemas.conflict, // duplicate audit number or record id
       },
     },
   },
