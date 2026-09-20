@@ -20,10 +20,13 @@ export function buildTxt(records: AuditRecord[]): string {
   return [FILE_HEADER, ...lines].join("\n");
 }
 
-/** Turns a list name into a safe filename. */
+/**
+ * Turns a list name into a safe filename. The file is named .csv while keeping
+ * the space-separated layout above, so it is unchanged for anything that reads it.
+ */
 export function exportFilename(name: string): string {
   const safe = name.trim().replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "");
-  return `${safe || "Untitled_List"}.txt`;
+  return `${safe || "Untitled_List"}.csv`;
 }
 
 export function downloadTxt(name: string, records: AuditRecord[]): void {

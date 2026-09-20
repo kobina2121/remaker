@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import ListEditor from "@/pages/ListEditor";
+import Verify from "@/pages/Verify";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/lists" component={Dashboard} />
       <Route path="/doc/:id" component={ListEditor} />
+      <Route path="/verify" component={Verify} />
       <Route component={NotFound} />
     </Switch>
   );

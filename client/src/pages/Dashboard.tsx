@@ -172,7 +172,7 @@ export default function Dashboard() {
         return;
       }
 
-      // One .txt per list, staggered so browsers do not drop concurrent downloads.
+      // One file per list, staggered so browsers do not drop concurrent downloads.
       for (const list of withRows) {
         downloadTxt(list.name, list.records);
         await new Promise((resolve) => setTimeout(resolve, 150));
@@ -258,6 +258,16 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
+
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => setLocation("/verify")}
+            className="shrink-0 bg-card"
+          >
+            <span className="hidden sm:inline">Verify a File</span>
+            <span className="sm:hidden">Verify</span>
+          </Button>
 
           <Button
             size="lg"

@@ -73,6 +73,15 @@ export default function Home() {
           >
             View All Lists
           </Button>
+
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => setLocation("/verify")}
+            className="text-lg px-8 py-6 transition-all hover:-translate-y-1"
+          >
+            Verify a File
+          </Button>
         </div>
 
         <div

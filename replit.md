@@ -7,7 +7,7 @@ Remaker is an audit-record application, available in the browser and as an Elect
     Audit Number -> Record ID + Box ID + Whitelist -> Validation -> Save -> Manage -> Export/Share
 
 Every list belongs to one remake category, chosen before the list is created.
-A list holds rows of four columns. Entering an 8-digit audit number automatically generates the other three. An Audit Range Generator fills whole ranges at once. Lists are saved to disk, managed from a dashboard, and exported as `.txt`: a first line of `FILEMK\\REMAKE JOB NID_RMK\\`, then one record per line with one space between fields and no column headings (columns: record_id, box_id, audit_no, whitelist).
+A list holds rows of four columns. Entering an 8-digit audit number automatically generates the other three. An Audit Range Generator fills whole ranges at once. Lists are saved to disk, managed from a dashboard, and exported as `.csv`: a first line of `FILEMK\\REMAKE JOB NID_RMK\\`, then one record per line with one space between fields and no column headings (columns: record_id, box_id, audit_no, whitelist).
 
 ## User Preferences
 
@@ -57,6 +57,20 @@ appear in the picker, the dashboard filter and the editor with no other changes.
 - Records belong to a category through their list, so a record's category always
   matches its list
 - Lists created before categories existed load as `other`
+
+### Milling & Embedding Verification
+After QC sends the exported file, M&E uploads it at `/verify` to have it checked
+again. The file is checked on its own - no saved list is needed:
+
+- Record ID and Box ID are re-derived from each audit number and compared with
+  the file, reported as "Record ID errors" / "Box ID errors" like the Whitelist
+  Analyzer does
+- Invalid audit numbers, malformed lines and duplicates are also reported
+- Accepts space-, tab- or comma-separated files, with or without the FILEMK job line,
+  and skips an old-style column heading row
+- Box IDs padded to a different width (00050 vs 000050) count as a note, not an error
+- The result can be saved as a plain-text report
+- Logic lives in `shared/verify.ts`; the screen is `client/src/pages/Verify.tsx`
 
 ### Audit Prefix
 Some sources label audit numbers with two leading letters, as in the
